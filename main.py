@@ -1,26 +1,23 @@
-from fastapi import File, UploadFile, Form
+from fastapi import FastAPI, Request
+from pydantic import BaseModel
+from playwright.sync_api import sync_playwright
+from agent import react_loop
+import uvicorn
+
+app = FastAPI()
+
+class JobRequest(BaseModel):
+    url: str
+    goal: str = "Find the careers page and apply to a frontend developer job."
 
 @app.post("/apply")
-async def apply_job(url: str = Form(...), file: UploadFile = File(...)):
-    from playwright.async_api import async_playwright
-    import os
+async def apply_job(req: JobRequest):
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+        react_loop(page, req.url, req.goal)
+        browser.close()
+    return {"status": "completed"}
 
-    # Save the uploaded file temporarily
-    file_location = f"/tmp/{file.filename}"
-    with open(file_location, "wb") as f:
-        f.write(await file.read())
-
-    try:
-        async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
-            context = await browser.new_context()
-            page = await context.new_page()
-            await page.goto(url, timeout=60000)
-            await page.wait_for_load_state("networkidle")
-
-            # Add logic to interact with the job site, e.g., fill form with resume if needed
-
-            await browser.close()
-        return {"status": "success", "resume_saved_as": file_location}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=8080, reload=False)
