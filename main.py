@@ -1,23 +1,36 @@
 from fastapi import FastAPI, Request
-from pydantic import BaseModel
-from playwright.sync_api import sync_playwright
-from agent import react_loop
-import uvicorn
+from fastapi.responses import JSONResponse
+from playwright.async_api import async_playwright
+import os
 
 app = FastAPI()
 
-class JobRequest(BaseModel):
-    url: str
-    goal: str = "Find the careers page and apply to a frontend developer job."
-
 @app.post("/apply")
-async def apply_job(req: JobRequest):
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-        react_loop(page, req.url, req.goal)
-        browser.close()
-    return {"status": "completed"}
+async def apply_job(request: Request):
+    data = await request.json()
+    url = data.get("url")
+    if not url:
+        return JSONResponse(content={"error": "Missing 'url' in request."}, status_code=400)
 
-if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8080, reload=False)
+    try:
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            context = await browser.new_context()
+            page = await context.new_page()
+            await page.goto(url, timeout=60000)
+            await page.wait_for_load_state("networkidle")
+
+            # Example: Try to find 'Careers' link
+            try:
+                careers_link = await page.wait_for_selector("text=Careers", timeout=5000)
+                await careers_link.click()
+                await page.wait_for_load_state("networkidle")
+            except:
+                pass  # If not found, continue
+
+            content = await page.content()
+            await browser.close()
+            return {"status": "completed", "page_snippet": content[:500]}
+
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
