@@ -1,16 +1,14 @@
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-from playwright.async_api import async_playwright
-import os
-
-app = FastAPI()
+from fastapi import File, UploadFile, Form
 
 @app.post("/apply")
-async def apply_job(request: Request):
-    data = await request.json()
-    url = data.get("url")
-    if not url:
-        return JSONResponse(content={"error": "Missing 'url' in request."}, status_code=400)
+async def apply_job(url: str = Form(...), file: UploadFile = File(...)):
+    from playwright.async_api import async_playwright
+    import os
+
+    # Save the uploaded file temporarily
+    file_location = f"/tmp/{file.filename}"
+    with open(file_location, "wb") as f:
+        f.write(await file.read())
 
     try:
         async with async_playwright() as p:
@@ -20,17 +18,9 @@ async def apply_job(request: Request):
             await page.goto(url, timeout=60000)
             await page.wait_for_load_state("networkidle")
 
-            # Example: Try to find 'Careers' link
-            try:
-                careers_link = await page.wait_for_selector("text=Careers", timeout=5000)
-                await careers_link.click()
-                await page.wait_for_load_state("networkidle")
-            except:
-                pass  # If not found, continue
+            # Add logic to interact with the job site, e.g., fill form with resume if needed
 
-            content = await page.content()
             await browser.close()
-            return {"status": "completed", "page_snippet": content[:500]}
-
+        return {"status": "success", "resume_saved_as": file_location}
     except Exception as e:
-        return JSONResponse(content={"error": str(e)}, status_code=500)
+        return {"status": "error", "message": str(e)}
