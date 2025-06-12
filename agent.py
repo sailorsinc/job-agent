@@ -13,7 +13,7 @@ def call_gpt(messages):
     )
     return response["choices"][0]["message"]["content"]
 
-def react_loop(page, start_url, goal):
+def react_loop(page, start_url, goal, resume_path="resumes/my_resume.pdf"):
     messages = [
         {"role": "system", "content": (
             "You are a job application assistant. "
@@ -49,7 +49,7 @@ def react_loop(page, start_url, goal):
             elif action.startswith("extract_job_links"):
                 obs = extract_job_links(page)
             elif action.startswith("fill_form"):
-                obs = fill_form(page)
+                obs = fill_form(page, resume_path)
             elif action.startswith("submit_form"):
                 obs = submit_form(page)
             else:
