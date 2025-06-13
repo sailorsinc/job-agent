@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Form
+from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from urllib.parse import urljoin
@@ -15,11 +15,16 @@ def _fetch_job_urls_sync(domain: str):
     start_url = domain
     if not start_url.startswith("http://") and not start_url.startswith("https://"):
         start_url = "https://" + start_url
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-        obs = react_loop(page, start_url, "Find links to job postings and list them.")
-        browser.close()
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
+            obs = react_loop(
+                page, start_url, "Find links to job postings and list them."
+            )
+            browser.close()
+    except Exception as exc:
+        raise RuntimeError(f"Playwright error: {exc}") from exc
 
     urls = []
     if obs:
@@ -33,6 +38,7 @@ def _fetch_job_urls_sync(domain: str):
                     urls.append(href)
     return sorted(set(urls))
 
+
 async def fetch_job_urls(domain: str):
     return await run_in_threadpool(_fetch_job_urls_sync, domain)
 
@@ -44,8 +50,12 @@ async def index(request: Request):
 
 @app.post("/fetch", response_class=HTMLResponse)
 async def fetch(request: Request, domain: str = Form(...)):
-    jobs = await fetch_job_urls(domain)
-    return templates.TemplateResponse("index.html", {"request": request, "jobs": jobs})
+    try:
+        jobs = await fetch_job_urls(domain)
+        context = {"request": request, "jobs": jobs}
+    except Exception as exc:
+        context = {"request": request, "jobs": [], "error": str(exc)}
+    return templates.TemplateResponse("index.html", context)
 
 
 if __name__ == "__main__":
