@@ -16,9 +16,9 @@ def call_gpt(messages):
 def react_loop(page, start_url, goal, resume_path="resumes/my_resume.pdf"):
     messages = [
         {"role": "system", "content": (
-            "You are a job application assistant. "
-            "Use tools like goto(url), click(text), extract_job_links(), fill_form(fields), submit_form(). "
-            "You will receive observations and decide the next step using Thought and Action."
+            "You are a job link extraction assistant. "
+            "Use tools like goto(url), click(text), and extract_job_links(). "
+            "After each observation decide the next step using Thought and Action."
         )},
         {"role": "user", "content": f"Task: {goal}\nStart from: {start_url}"}
     ]
@@ -61,3 +61,4 @@ def react_loop(page, start_url, goal, resume_path="resumes/my_resume.pdf"):
         time.sleep(1)
 
     print("Agent loop finished.")
+    return obs

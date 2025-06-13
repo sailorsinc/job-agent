@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Job Postings Finder</title>
+</head>
+<body>
+    <h1>Job Postings Finder</h1>
+    <form method="post" action="/fetch">
+        <input type="text" name="domain" placeholder="example.com" required />
+        <button type="submit">Fetch Jobs</button>
+    </form>
+    {% if jobs %}
+    <h2>Job URLs</h2>
+    <ul>
+        {% for url in jobs %}
+        <li><a href="{{ url }}" target="_blank">{{ url }}</a></li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</body>
+</html>
