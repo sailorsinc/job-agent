@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from urllib.parse import urljoin
 from playwright.sync_api import sync_playwright
+from starlette.concurrency import run_in_threadpool
 from agent import react_loop
 import uvicorn
 
@@ -10,7 +11,7 @@ app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
 
-def fetch_job_urls(domain: str):
+def _fetch_job_urls_sync(domain: str):
     start_url = domain
     if not start_url.startswith("http://") and not start_url.startswith("https://"):
         start_url = "https://" + start_url
@@ -32,6 +33,9 @@ def fetch_job_urls(domain: str):
                     urls.append(href)
     return sorted(set(urls))
 
+async def fetch_job_urls(domain: str):
+    return await run_in_threadpool(_fetch_job_urls_sync, domain)
+
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
@@ -40,7 +44,7 @@ async def index(request: Request):
 
 @app.post("/fetch", response_class=HTMLResponse)
 async def fetch(request: Request, domain: str = Form(...)):
-    jobs = fetch_job_urls(domain)
+    jobs = await fetch_job_urls(domain)
     return templates.TemplateResponse("index.html", {"request": request, "jobs": jobs})
 
 
