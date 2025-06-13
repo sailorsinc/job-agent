@@ -9,6 +9,9 @@
         <input type="text" name="domain" placeholder="example.com" required />
         <button type="submit">Fetch Jobs</button>
     </form>
+    {% if error %}
+    <p style="color: red">{{ error }}</p>
+    {% endif %}
     {% if jobs %}
     <h2>Job URLs</h2>
     <ul>
@@ -16,6 +19,15 @@
         <li><a href="{{ url }}" target="_blank">{{ url }}</a></li>
         {% endfor %}
     </ul>
+    {% endif %}
+    {% if logs %}
+    <h2>GPT Responses</h2>
+    <pre>
+{% for log in logs %}
+{{ log }}
+-----
+{% endfor %}
+    </pre>
     {% endif %}
 </body>
 </html>
