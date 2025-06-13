@@ -1,17 +1,17 @@
-import openai
+from openai import OpenAI
 import time
 from tools import goto, click_text, extract_job_links, fill_form, submit_form
 import os
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def call_gpt(messages):
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-4",
         messages=messages,
-        temperature=0.3
+        temperature=0.3,
     )
-    return response["choices"][0]["message"]["content"]
+    return response.choices[0].message.content
 
 def react_loop(page, start_url, goal, resume_path="resumes/my_resume.pdf"):
     messages = [
