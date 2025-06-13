@@ -18,14 +18,23 @@ def _fetch_job_urls_sync(domain: str):
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
             page = browser.new_page()
-            urls, transcript = react_loop(
+            obs, transcript = react_loop(
                 page, start_url, "Find links to job postings and list them."
             )
             browser.close()
     except Exception as exc:
         raise RuntimeError(f"Playwright error: {exc}") from exc
-
-    return urls, transcript
+    urls = []
+    if obs:
+        for line in obs.splitlines():
+            if "\u2192" in line or "->" in line:
+                sep = "\u2192" if "\u2192" in line else "->"
+                href = line.split(sep)[-1].strip()
+                if href:
+                    if not href.startswith("http"):
+                        href = urljoin(start_url, href)
+                    urls.append(href)
+    return sorted(set(urls)), transcript
 
 
 async def fetch_job_urls(domain: str):

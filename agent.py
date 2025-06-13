@@ -26,25 +26,6 @@ def react_loop(page, start_url, goal, resume_path="resumes/my_resume.pdf"):
 
     obs = goto(page, start_url)
     transcript = []
-    job_urls = []
-
-    def _parse_links(text):
-        urls = []
-        for line in text.splitlines():
-            if "\u2192" in line or "->" in line:
-                sep = "\u2192" if "\u2192" in line else "->"
-                href = line.split(sep)[-1].strip()
-            else:
-                href = None
-                for token in line.split():
-                    if token.startswith("http"):
-                        href = token
-                        break
-            if href:
-                if not href.startswith("http"):
-                    href = urljoin(start_url, href)
-                urls.append(href)
-        return urls
 
     for _ in range(15):
         messages.append({"role": "user", "content": f"Observation: {obs}"})
@@ -84,4 +65,4 @@ def react_loop(page, start_url, goal, resume_path="resumes/my_resume.pdf"):
         time.sleep(1)
 
     print("Agent loop finished.")
-    return sorted(set(job_urls)), transcript
+    return obs, transcript
