@@ -24,11 +24,13 @@ def react_loop(page, start_url, goal, resume_path="resumes/my_resume.pdf"):
     ]
 
     obs = goto(page, start_url)
+    transcript = []
 
     for _ in range(15):
         messages.append({"role": "user", "content": f"Observation: {obs}"})
         reply = call_gpt(messages)
         print("GPT Reply:\n", reply)
+        transcript.append(reply)
 
         messages.append({"role": "assistant", "content": reply})
 
@@ -61,4 +63,4 @@ def react_loop(page, start_url, goal, resume_path="resumes/my_resume.pdf"):
         time.sleep(1)
 
     print("Agent loop finished.")
-    return obs
+    return obs, transcript
