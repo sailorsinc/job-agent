@@ -1,5 +1,6 @@
 from openai import OpenAI
 import time
+from urllib.parse import urljoin
 from tools import goto, click_text, extract_job_links, fill_form, submit_form
 import os
 
@@ -50,6 +51,7 @@ def react_loop(page, start_url, goal, resume_path="resumes/my_resume.pdf"):
                 obs = click_text(page, text)
             elif action.startswith("extract_job_links"):
                 obs = extract_job_links(page)
+                job_urls.extend(_parse_links(obs))
             elif action.startswith("fill_form"):
                 obs = fill_form(page, resume_path)
             elif action.startswith("submit_form"):

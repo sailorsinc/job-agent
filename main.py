@@ -1,7 +1,6 @@
 from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from urllib.parse import urljoin
 from playwright.sync_api import sync_playwright
 from starlette.concurrency import run_in_threadpool
 from agent import react_loop
@@ -25,7 +24,6 @@ def _fetch_job_urls_sync(domain: str):
             browser.close()
     except Exception as exc:
         raise RuntimeError(f"Playwright error: {exc}") from exc
-
     urls = []
     if obs:
         for line in obs.splitlines():
