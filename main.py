@@ -19,7 +19,7 @@ def _fetch_job_urls_sync(domain: str):
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
             page = browser.new_page()
-            obs, transcript = react_loop(
+            obs = react_loop(
                 page, start_url, "Find links to job postings and list them."
             )
             browser.close()
@@ -36,7 +36,7 @@ def _fetch_job_urls_sync(domain: str):
                     if not href.startswith("http"):
                         href = urljoin(start_url, href)
                     urls.append(href)
-    return sorted(set(urls)), transcript
+    return sorted(set(urls))
 
 
 async def fetch_job_urls(domain: str):
@@ -45,16 +45,16 @@ async def fetch_job_urls(domain: str):
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request, "jobs": [], "logs": []})
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
 @app.post("/fetch", response_class=HTMLResponse)
 async def fetch(request: Request, domain: str = Form(...)):
     try:
-        jobs, logs = await fetch_job_urls(domain)
-        context = {"request": request, "jobs": jobs, "logs": logs}
+        jobs = await fetch_job_urls(domain)
+        context = {"request": request, "jobs": jobs}
     except Exception as exc:
-        context = {"request": request, "jobs": [], "logs": [], "error": str(exc)}
+        context = {"request": request, "jobs": [], "error": str(exc)}
     return templates.TemplateResponse("index.html", context)
 
 
